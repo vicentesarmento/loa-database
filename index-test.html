@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" ng-app="LoADBapp">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LoA Easy DB</title>
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+    </head>
+    <body ng-controller="LoADB as db">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12">
+                    <h1>Easy LoA DB</h1>
+                    <h2>Data table</h2>
+                    <div ng-repeat="card in db.cards">
+                        <ul>
+                            <li>
+                                <h3>{{card.name}} <small>{{card.race}}</small></h3>
+                            </li>
+                        </ul>
+                    </div>
+                </div>    
+            </div>
+        </div>
+        
+        <!-- angularjs -->
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.min.js"></script>
+        <!-- jquery -->
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <!-- underscore / underscore.string -->
+        <script src="http://underscorejs.org/underscore-min.js"></script>
+        <script src="http://epeli.github.io/underscore.string/lib/underscore.string.js"></script>
+        
+        <script src="js/app.js"></script>
+        
+        <!-- my script -->
+        <script>        
+            var _s = _.string;
+            var pageId = 4158;
+            var dataTable;
+            var allCards;
+            
+            var getTable = function (pageId) { 
+                var tableSource = "http://lies-of-astaroth.wikia.com/api.php?action=query&pageids=" + pageId + "&rvprop=content&prop=revisions&format=json&callback=?"; 
+                $.getJSON(tableSource, function(data) {                                      
+                    // valores do json, direto no nó desejado
+                    dataTable           = data.query.pages[pageId].revisions[0]["*"];
+                    
+                    // dataTable sem as informações excedentes
+                    var cleanDataTable      = _s.words(_s.strRight(_s.strRight(dataTable, "|-"), "|-"),"|-");
+
+                    // separação de cada linha da tabela em arrays
+                    var fullTable           = cleanDataTable.map(cardSplit);
+
+                    // remoção de arrays vazios
+                    var cleanFullTable      = _.filter(fullTable, function(obj){ return obj.length > 2; });
+
+                    // pega os valores de cada array e relaciona a uma key.
+                    allCards            = cleanFullTable.map(bindKeys);
+                });
+            }
+            
+            var bindKeys = function(obj){
+                obj = _.object(['id', 'image', 'name', 'cost', 'star', 'race', 'wait', 'atk', 'hp'], obj);     
+                return obj;
+            }
+
+            var removeBrackets = function(obj) {
+                obj = obj.replace("[[","").replace("]]","");
+                return obj;                        
+            }
+
+            var cardSplit =  function(cardString){
+                var cardValuesString = _s.trim(_s.trim(cardString).split("||"),"|");
+                var cardValuesArray = _s.words(_s.clean(cardValuesString)," , ").map(removeBrackets);                 
+                return cardValuesArray;
+            }
+            
+            getTable(pageId);
+        </script>
+    </body>
+</html>
